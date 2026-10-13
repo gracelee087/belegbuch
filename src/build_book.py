@@ -1,0 +1,130 @@
+"""Receipts folder + ING CSV -> Excel book for the Steuerberater.
+
+  python src/build_book.py receipts/ bank.csv out.xlsx [--zve 38000]
+
+Sheets: Belege (every receipt, checked), Fehlende Belege (bank lines with no receipt),
+Schaetzung (what the receipts are worth; --zve = taxable income from last year's Steuerbescheid).
+"""
+import argparse
+import json
+import os
+import sys
+import time
+
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
+
+sys.path.insert(0, os.path.dirname(__file__))
+from bank_ing import read_ing_csv
+from extract import RECEIPT_EXT, check, extract
+from match import match
+from tax import ARBEITNEHMER_PAUSCHBETRAG, marginal_rate, saving
+
+WERBUNGSKOSTEN = {"Arbeitsmittel", "Fachliteratur", "Fortbildung", "Fahrtkosten", "Gewerkschaft"}
+
+# Hint only: which bank lines probably need a receipt for the tax folder
+BANK_HINTS = {"gewerkschaft": "Gewerkschaft", "db vertrieb": "Fahrtkosten", "deutschlandticket": "Fahrtkosten",
+              "spende": "Spende", "e.v.": "Spende", "haushaltsservice": "Haushaltsnahe Dienstleistung",
+              "reinigung": "Haushaltsnahe Dienstleistung", "apotheke": "Krankheitskosten",
+              "fachbuch": "Fachliteratur", "kurs": "Fortbildung"}
+
+BOLD, WARN = Font(bold=True), PatternFill("solid", fgColor="FFE699")
+
+
+def bank_hint(t: dict) -> str:
+    text = (t["counterparty"] + " " + t["purpose"]).lower()
+    return next((cat for key, cat in BANK_HINTS.items() if key in text), "")
+
+
+def read_receipts(folder: str, cache_path: str) -> list[dict]:
+    cache = json.load(open(cache_path, encoding="utf-8")) if os.path.exists(cache_path) else {}
+    out = []
+    for name in sorted(os.listdir(folder)):
+        if os.path.splitext(name)[1].lower() not in RECEIPT_EXT:
+            continue
+        path = os.path.join(folder, name)
+        key = f"{name}:{os.path.getsize(path)}:{os.path.getmtime(path)}"
+        if key not in cache:
+            t = time.time()
+            r = extract(path)
+            r["seconds"] = round(time.time() - t, 1)
+            cache[key] = r
+            json.dump(cache, open(cache_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+            print(f"{name}: {r.get('vendor')} {r.get('total')} ({r['seconds']} s)")
+        out.append(cache[key])
+    return out
+
+
+def sheet(wb, title, header, rows, warn_col=None):
+    ws = wb.create_sheet(title)
+    ws.append(header)
+    for c in ws[1]:
+        c.font = BOLD
+    for row in rows:
+        ws.append(row)
+        if warn_col is not None and row[warn_col]:
+            for c in ws[ws.max_row]:
+                c.fill = WARN
+    for col in ws.columns:
+        ws.column_dimensions[col[0].column_letter].width = min(max(len(str(c.value or "")) for c in col) + 2, 50)
+    ws.freeze_panes = "A2"
+    return ws
+
+
+def build(folder, bank_csv, out, zve=None):
+    receipts = read_receipts(folder, os.path.join(folder, ".extracted.json"))
+    tx = read_ing_csv(bank_csv)
+    m = match(tx, receipts)
+    paired = {id(r): t for t, r in m["matched"]}
+
+    wk_total = sum(r.get("total") or 0 for r in receipts if r.get("category") in WERBUNGSKOSTEN)
+
+    wb = Workbook()
+    wb.remove(wb.active)
+    rows, wk_so_far = [], 0.0
+    for r in sorted(receipts, key=lambda r: r.get("date") or ""):
+        vat = {v.get("rate"): v.get("amount") for v in r.get("vat") or []}
+        t = paired.get(id(r))
+        extra = ""
+        if zve is not None and r.get("category") in WERBUNGSKOSTEN and r.get("total"):
+            extra = saving(zve, wk_so_far + r["total"]) - saving(zve, wk_so_far)
+            wk_so_far += r["total"]
+        rows.append([r.get("date"), r.get("vendor"), r.get("total"), vat.get(19), vat.get(7), r.get("category"),
+                     r.get("payment"), ", ".join(r.get("items") or []), r.get("source"), r.get("read_as"),
+                     t["date"].isoformat() if t else ("bar" if r.get("payment") == "cash" else "nicht gefunden"),
+                     extra, "; ".join(check(r))])
+    sheet(wb, "Belege", ["Datum", "Händler", "Betrag", "MwSt 19%", "MwSt 7%", "Kategorie (Vorschlag)", "Zahlung",
+                         "Positionen", "Datei", "Gelesen als", "Bankbuchung", "≈ Steuerersparnis €", "Bitte prüfen"],
+          rows, warn_col=12)
+
+    missing = sorted(m["missing_receipt"], key=lambda t: (bank_hint(t) == "", t["date"]))
+    sheet(wb, "Fehlende Belege", ["Datum", "Empfänger", "Verwendungszweck", "Betrag", "Wahrscheinlich steuerlich relevant"],
+          [[t["date"].isoformat(), t["counterparty"], t["purpose"], t["amount"], bank_hint(t)] for t in missing], warn_col=4)
+
+    ws = wb.create_sheet("Schaetzung")
+    ws.append(["Grobe Schätzung — keine Steuerberatung. Der Steuerberater entscheidet."])
+    ws["A1"].font = BOLD
+    ws.append(["Werbungskosten aus Belegen", round(wk_total, 2)])
+    ws.append(["Arbeitnehmer-Pauschbetrag (§9a EStG)", ARBEITNEHMER_PAUSCHBETRAG])
+    ws.append(["Noch bis zum Pauschbetrag (erst danach sparen Belege Steuer)", round(max(ARBEITNEHMER_PAUSCHBETRAG - wk_total, 0), 2)])
+    if zve is not None:
+        ws.append(["zu versteuerndes Einkommen (Eingabe, z. B. letzter Steuerbescheid)", zve])
+        ws.append(["Je 100 € Werbungskosten über dem Pauschbetrag ≈ € Steuer weniger", round(100 * marginal_rate(zve), 2)])
+        ws.append(["≈ Steuerersparnis durch diese Belege (§32a EStG 2026)", saving(zve, wk_total)])
+    else:
+        ws.append(["Für eine Schätzung: --zve angeben"])
+    ws.append([])
+    ws.append(["Nicht berücksichtigt: Solidaritätszuschlag, Kirchensteuer, Zusammenveranlagung, Sonderausgaben,"
+               " §35a, Höchstbeträge. Nur Belege der Kategorien " + ", ".join(sorted(WERBUNGSKOSTEN)) + "."])
+    ws.column_dimensions["A"].width = 48
+    wb.save(out)
+    return {"receipts": len(receipts), "matched": len(m["matched"]), "missing": len(missing),
+            "relevant_missing": sum(1 for t in missing if bank_hint(t)), "werbungskosten": round(wk_total, 2)}
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("folder"); ap.add_argument("bank_csv"); ap.add_argument("out")
+    ap.add_argument("--zve", type=float)
+    a = ap.parse_args()
+    print(build(a.folder, a.bank_csv, a.out, a.zve))

@@ -1,0 +1,11 @@
+From: Udemy <receipts@udemy.example>
+To: max@example.com
+Date: Fri, 14 Aug 2026 10:02:00 +0200
+Subject: Your Udemy receipt
+Content-Type: text/plain; charset=utf-8
+
+Receipt - 14 Aug 2026
+Python for Data Analysis (course)        19,99 EUR
+VAT 19% included                          3,19 EUR
+Total                                    19,99 EUR
+Paid with Mastercard ending 4242

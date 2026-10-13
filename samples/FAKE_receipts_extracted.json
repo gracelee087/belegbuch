@@ -1,0 +1,7 @@
+[
+ {"source":"fake_thalia.jpg","date":"2026-07-08","vendor":"Thalia","total":49.99,"vat":[{"rate":7,"amount":3.27}],"payment":"card","items":["Fachbuch Machine Learning"]},
+ {"source":"fake_amazon.pdf","date":"2026-07-11","vendor":"Amazon EU","total":189.90,"vat":[{"rate":19,"amount":30.32}],"payment":"card","items":["Monitor 27 Zoll"]},
+ {"source":"fake_udemy.eml","date":"2026-08-14","vendor":"Udemy","total":19.99,"vat":[{"rate":19,"amount":3.19}],"payment":"card","items":["Python Kurs"]},
+ {"source":"fake_mediamarkt.jpg","date":"2026-09-11","vendor":"Media Markt","total":79.00,"vat":[{"rate":19,"amount":12.61}],"payment":"card","items":["Headset"]},
+ {"source":"fake_cafe_cash.jpg","date":"2026-09-03","vendor":"Cafe Muster","total":8.40,"vat":[{"rate":19,"amount":1.34}],"payment":"cash","items":["Kaffee"]}
+]

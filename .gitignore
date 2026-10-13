@@ -1,0 +1,7 @@
+.env
+receipts/
+__pycache__/
+.venv/
+.extracted.json
+HANDOFF.md
+dev-post-draft.md

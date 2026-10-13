@@ -1,0 +1,7 @@
+ollama
+paddlepaddle
+paddleocr
+pdfplumber
+openpyxl
+Pillow
+reportlab
