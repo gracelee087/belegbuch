@@ -2,8 +2,8 @@
 
   python src/build_book.py receipts/ bank.csv out.xlsx [--zve 38000]
 
-Sheets: Belege (every receipt, checked), Fehlende Belege (bank lines with no receipt),
-Schaetzung (what the receipts are worth; --zve = taxable income from last year's Steuerbescheid).
+Sheets: Receipts (every receipt, checked), Missing receipts (bank lines with no receipt),
+Estimate (what the receipts are worth; --zve = taxable income from last year's Steuerbescheid).
 """
 import argparse
 import json
@@ -23,7 +23,16 @@ from tax import ARBEITNEHMER_PAUSCHBETRAG, marginal_rate, saving
 WERBUNGSKOSTEN = {"Arbeitsmittel", "Fachliteratur", "Fortbildung", "Fahrtkosten", "Gewerkschaft"}
 
 # Hint only: which bank lines probably need a receipt for the tax folder
-BANK_HINTS = {"gewerkschaft": "Gewerkschaft", "db vertrieb": "Fahrtkosten", "deutschlandticket": "Fahrtkosten",
+CATEGORY_EN = {"Arbeitsmittel": "work equipment", "Fachliteratur": "professional books", "Fortbildung": "training",
+               "Fahrtkosten": "commuting", "Gewerkschaft": "union fee", "Spende": "donation",
+               "Haushaltsnahe Dienstleistung": "household service", "Krankheitskosten": "medical", "Privat": "private"}
+
+
+def label(cat: str | None) -> str:
+    return f"{cat} ({CATEGORY_EN[cat]})" if cat in CATEGORY_EN else (cat or "")
+
+
+BANK_HINTS = {"gewerkschaft": "Gewerkschaft", "regio-bahn": "Fahrtkosten", "deutschlandticket": "Fahrtkosten",
               "spende": "Spende", "e.v.": "Spende", "haushaltsservice": "Haushaltsnahe Dienstleistung",
               "reinigung": "Haushaltsnahe Dienstleistung", "apotheke": "Krankheitskosten",
               "fachbuch": "Fachliteratur", "kurs": "Fortbildung"}
@@ -89,34 +98,35 @@ def build(folder, bank_csv, out, zve=None):
         if zve is not None and r.get("category") in WERBUNGSKOSTEN and r.get("total"):
             extra = saving(zve, wk_so_far + r["total"]) - saving(zve, wk_so_far)
             wk_so_far += r["total"]
-        rows.append([r.get("date"), r.get("vendor"), r.get("total"), vat.get(19), vat.get(7), r.get("category"),
+        rows.append([r.get("date"), r.get("vendor"), r.get("total"), vat.get(19), vat.get(7), label(r.get("category")),
                      r.get("payment"), ", ".join(r.get("items") or []), r.get("source"), r.get("read_as"),
-                     t["date"].isoformat() if t else ("bar" if r.get("payment") == "cash" else "nicht gefunden"),
+                     t["date"].isoformat() if t else ("cash" if r.get("payment") == "cash" else "not found"),
                      extra, "; ".join(check(r))])
-    sheet(wb, "Belege", ["Datum", "Händler", "Betrag", "MwSt 19%", "MwSt 7%", "Kategorie (Vorschlag)", "Zahlung",
-                         "Positionen", "Datei", "Gelesen als", "Bankbuchung", "≈ Steuerersparnis €", "Bitte prüfen"],
+    sheet(wb, "Receipts", ["Date", "Shop", "Total €", "VAT 19%", "VAT 7%", "Category (suggested)", "Paid by",
+                           "Items", "File", "Read as", "Bank line", "≈ tax saved €", "Please check"],
           rows, warn_col=12)
 
     missing = sorted(m["missing_receipt"], key=lambda t: (bank_hint(t) == "", t["date"]))
-    sheet(wb, "Fehlende Belege", ["Datum", "Empfänger", "Verwendungszweck", "Betrag", "Wahrscheinlich steuerlich relevant"],
-          [[t["date"].isoformat(), t["counterparty"], t["purpose"], t["amount"], bank_hint(t)] for t in missing], warn_col=4)
+    sheet(wb, "Missing receipts", ["Date", "Payee", "Purpose", "Amount €", "Probably tax-relevant"],
+          [[t["date"].isoformat(), t["counterparty"], t["purpose"], t["amount"], label(bank_hint(t)) if bank_hint(t) else ""]
+           for t in missing], warn_col=4)
 
-    ws = wb.create_sheet("Schaetzung")
-    ws.append(["Grobe Schätzung — keine Steuerberatung. Der Steuerberater entscheidet."])
+    ws = wb.create_sheet("Estimate")
+    ws.append(["Rough estimate, not tax advice. Your Steuerberater decides."])
     ws["A1"].font = BOLD
-    ws.append(["Werbungskosten aus Belegen", round(wk_total, 2)])
-    ws.append(["Arbeitnehmer-Pauschbetrag (§9a EStG)", ARBEITNEHMER_PAUSCHBETRAG])
-    ws.append(["Noch bis zum Pauschbetrag (erst danach sparen Belege Steuer)", round(max(ARBEITNEHMER_PAUSCHBETRAG - wk_total, 0), 2)])
+    ws.append(["Work expenses from receipts (Werbungskosten) €", round(wk_total, 2)])
+    ws.append(["Employee lump sum (Arbeitnehmer-Pauschbetrag, §9a EStG) €", ARBEITNEHMER_PAUSCHBETRAG])
+    ws.append(["Still to go before receipts save any tax €", round(max(ARBEITNEHMER_PAUSCHBETRAG - wk_total, 0), 2)])
     if zve is not None:
-        ws.append(["zu versteuerndes Einkommen (Eingabe, z. B. letzter Steuerbescheid)", zve])
-        ws.append(["Je 100 € Werbungskosten über dem Pauschbetrag ≈ € Steuer weniger", round(100 * marginal_rate(zve), 2)])
-        ws.append(["≈ Steuerersparnis durch diese Belege (§32a EStG 2026)", saving(zve, wk_total)])
+        ws.append(["Taxable income (input, e.g. last Steuerbescheid) €", zve])
+        ws.append(["Each €100 of work expenses above the lump sum ≈ € less tax", round(100 * marginal_rate(zve), 2)])
+        ws.append(["≈ Tax saved by these receipts (§32a EStG 2026) €", saving(zve, wk_total)])
     else:
-        ws.append(["Für eine Schätzung: --zve angeben"])
+        ws.append(["For an estimate, pass --zve"])
     ws.append([])
-    ws.append(["Nicht berücksichtigt: Solidaritätszuschlag, Kirchensteuer, Zusammenveranlagung, Sonderausgaben,"
-               " §35a, Höchstbeträge. Nur Belege der Kategorien " + ", ".join(sorted(WERBUNGSKOSTEN)) + "."])
-    ws.column_dimensions["A"].width = 48
+    ws.append(["Not included: solidarity surcharge, church tax, joint assessment, special expenses,"
+               " §35a, caps. Only receipts in: " + ", ".join(label(c) for c in sorted(WERBUNGSKOSTEN)) + "."])
+    ws.column_dimensions["A"].width = 58
     wb.save(out)
     return {"receipts": len(receipts), "matched": len(m["matched"]), "missing": len(missing),
             "relevant_missing": sum(1 for t in missing if bank_hint(t)), "werbungskosten": round(wk_total, 2)}

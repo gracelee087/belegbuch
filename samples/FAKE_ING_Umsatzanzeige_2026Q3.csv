@@ -8,23 +8,23 @@ Zeitraum;01.07.2026 - 30.09.2026
 
 Buchung;Wertstellungsdatum;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung
 01.07.2026;01.07.2026;Wohnbau Muster GmbH;Lastschrift;Miete Juli 2026;1.550,00;EUR;-950,00;EUR
-02.07.2026;02.07.2026;DB Vertrieb GmbH;Lastschrift;Deutschlandticket Juli;1.487,00;EUR;-63,00;EUR
-05.07.2026;05.07.2026;REWE Markt;Lastschrift;Kartenzahlung REWE;1.444,63;EUR;-42,37;EUR
-08.07.2026;08.07.2026;Thalia Buecher GmbH;Lastschrift;Fachbuch Machine Learning;1.394,64;EUR;-49,99;EUR
-12.07.2026;12.07.2026;Amazon EU S.a.r.l.;Lastschrift;Bestellung 302-1234567 Monitor;1.204,74;EUR;-189,90;EUR
+02.07.2026;02.07.2026;Regio-Bahn Muster GmbH;Lastschrift;Deutschlandticket Juli;1.487,00;EUR;-63,00;EUR
+05.07.2026;05.07.2026;Frischmarkt Muster;Lastschrift;Kartenzahlung Frischmarkt;1.444,63;EUR;-42,37;EUR
+08.07.2026;08.07.2026;Buchhandlung Lesezeichen;Lastschrift;Kartenzahlung Buchhandlung;1.394,64;EUR;-49,99;EUR
+12.07.2026;12.07.2026;Versandhaus Muster GmbH;Lastschrift;Bestellung 000-0000000 Monitor;1.204,74;EUR;-189,90;EUR
 15.07.2026;15.07.2026;Beispiel AG;Gehalt/Rente;Gehalt Juli 2026;4.054,74;EUR;2.850,00;EUR
 20.07.2026;20.07.2026;Aktion Musterhilfe e.V.;Ueberweisung;Spende;4.004,74;EUR;-50,00;EUR
 01.08.2026;01.08.2026;Wohnbau Muster GmbH;Lastschrift;Miete August 2026;3.054,74;EUR;-950,00;EUR
-02.08.2026;02.08.2026;DB Vertrieb GmbH;Lastschrift;Deutschlandticket August;2.991,74;EUR;-63,00;EUR
-06.08.2026;06.08.2026;Telekom Deutschland;Lastschrift;Internet August;2.951,79;EUR;-39,95;EUR
+02.08.2026;02.08.2026;Regio-Bahn Muster GmbH;Lastschrift;Deutschlandticket August;2.991,74;EUR;-63,00;EUR
+06.08.2026;06.08.2026;Netz Muster Telekommunikation;Lastschrift;Internet August;2.951,79;EUR;-39,95;EUR
 10.08.2026;10.08.2026;Muster Haushaltsservice;Ueberweisung;Rechnung 2026-081 Fensterreinigung;2.831,79;EUR;-120,00;EUR
-14.08.2026;14.08.2026;Udemy Ireland Ltd;Lastschrift;Online-Kurs Python;2.811,80;EUR;-19,99;EUR
+14.08.2026;14.08.2026;Lernplattform Muster;Lastschrift;Online-Kurs Python;2.811,80;EUR;-19,99;EUR
 15.08.2026;15.08.2026;Beispiel AG;Gehalt/Rente;Gehalt August 2026;5.661,80;EUR;2.850,00;EUR
 22.08.2026;22.08.2026;Apotheke am Markt;Lastschrift;Kartenzahlung Apotheke;5.634,00;EUR;-27,80;EUR
 01.09.2026;01.09.2026;Wohnbau Muster GmbH;Lastschrift;Miete September 2026;4.684,00;EUR;-950,00;EUR
-02.09.2026;02.09.2026;DB Vertrieb GmbH;Lastschrift;Deutschlandticket September;4.621,00;EUR;-63,00;EUR
-06.09.2026;06.09.2026;Telekom Deutschland;Lastschrift;Internet September;4.581,05;EUR;-39,95;EUR
-11.09.2026;11.09.2026;Media Markt;Lastschrift;Kartenzahlung Headset;4.502,05;EUR;-79,00;EUR
+02.09.2026;02.09.2026;Regio-Bahn Muster GmbH;Lastschrift;Deutschlandticket September;4.621,00;EUR;-63,00;EUR
+06.09.2026;06.09.2026;Netz Muster Telekommunikation;Lastschrift;Internet September;4.581,05;EUR;-39,95;EUR
+11.09.2026;11.09.2026;Elektro Funke;Lastschrift;Kartenzahlung Elektro;4.502,05;EUR;-79,00;EUR
 15.09.2026;15.09.2026;Beispiel AG;Gehalt/Rente;Gehalt September 2026;7.352,05;EUR;2.850,00;EUR
 19.09.2026;19.09.2026;Gewerkschaft Muster;Lastschrift;Mitgliedsbeitrag Q3;7.307,05;EUR;-45,00;EUR
-26.09.2026;26.09.2026;Lieferando;Lastschrift;Kartenzahlung Essen;7.283,55;EUR;-23,50;EUR
+26.09.2026;26.09.2026;Lieferservice Muster;Lastschrift;Kartenzahlung Essen;7.283,55;EUR;-23,50;EUR

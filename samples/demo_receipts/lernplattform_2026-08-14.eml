@@ -1,0 +1,13 @@
+From: Lernplattform Muster <rechnung@lernplattform.example>
+To: max@example.com
+Date: Fri, 14 Aug 2026 10:02:00 +0200
+Subject: Ihre Rechnung / Your receipt
+Content-Type: text/plain; charset=utf-8
+
+Rechnung vom 14.08.2026
+Online-Kurs: Python fuer Datenanalyse      19,99 EUR
+enthaltene MwSt 19%                         3,19 EUR
+Gesamt                                     19,99 EUR
+Bezahlt mit Mastercard **** 0000
+
+MUSTER - FAKE DEMO

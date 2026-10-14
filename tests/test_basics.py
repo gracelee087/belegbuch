@@ -47,7 +47,7 @@ class MatchTest(unittest.TestCase):
         tx = read_ing_csv(SAMPLE)
         receipts = json.load(open(os.path.join(os.path.dirname(SAMPLE), "FAKE_receipts_extracted.json"), encoding="utf-8"))
         m = match(tx, receipts)
-        self.assertEqual(len(m["matched"]), 4)          # Thalia, Amazon (1 day apart), Udemy, Media Markt
+        self.assertEqual(len(m["matched"]), 4)          # Lesezeichen, Versandhaus (1 day apart), Lernplattform, Elektro Funke
         self.assertEqual(len(m["missing_receipt"]), 14)  # 18 spending lines - 4
         self.assertEqual([r["vendor"] for r in m["no_bank_entry"]], ["Cafe Muster"])
 
@@ -62,3 +62,13 @@ class CheckTest(unittest.TestCase):
         # the café receipt Gemma 4 misread in the demo: 17.84 with 3.34 VAT
         self.assertTrue(any("VAT" in p for p in check({"date": "2026-09-03", "vendor": "Cafe", "total": 17.84,
                                                          "vat": [{"rate": 19, "amount": 3.34}], "category": "Privat"})))
+
+
+class InvoicePaidLaterTest(unittest.TestCase):
+    def test_transfer_after_invoice_date(self):
+        from datetime import date
+        from match import match
+        tx = [{"date": date(2026, 8, 10), "amount": -120.0, "counterparty": "Muster Haushaltsservice", "purpose": ""}]
+        receipts = [{"date": "2026-08-05", "total": 120.0}]
+        self.assertEqual(len(match(tx, receipts)["matched"]), 1)
+        self.assertEqual(len(match(tx, receipts, before=3, after=3)["matched"]), 0)

@@ -9,9 +9,9 @@ an Excel book with three sheets:
 
 | Sheet | What it shows |
 |---|---|
-| **Belege** | Every receipt: date, shop, total, VAT 19 % / 7 %, a suggested tax category, which bank line it belongs to, and a yellow row when the code thinks the model misread it |
-| **Fehlende Belege** | Bank payments with no receipt, the probably tax-relevant ones first |
-| **Schaetzung** | What the receipts are worth so far: how far you are from the €1,230 Arbeitnehmer-Pauschbetrag and roughly how much tax each €100 above it saves (German tariff 2026) |
+| **Receipts** | Every receipt: date, shop, total, VAT 19 % / 7 %, a suggested tax category, which bank line it belongs to, and a yellow row when the code thinks the model misread it |
+| **Missing receipts** | Bank payments with no receipt, the probably tax-relevant ones first |
+| **Estimate** | What the receipts are worth so far: how far you are from the €1,230 Arbeitnehmer-Pauschbetrag and roughly how much tax each €100 above it saves (German tariff 2026) |
 
 It is a sorting helper, not tax advice. The Steuerberater decides.
 
@@ -24,8 +24,9 @@ It is a sorting helper, not tax advice. The Steuerberater decides.
 | PDF text | [pdfplumber](https://github.com/jsvine/pdfplumber) | MIT |
 | Excel | [openpyxl](https://openpyxl.readthedocs.io) | MIT |
 
-Receipts carry names, addresses, card digits and what you bought. None of it is sent anywhere: the model
-runs in Ollama on this machine. A cloud path (Gemma 4 through the Gemini API) exists in the code for people
+Receipts carry names, addresses, card digits and what you bought. In the default setup nothing in the code
+calls a remote API: the model runs in Ollama on this machine. (PaddleOCR downloads its model files once,
+the first time it runs; receipts are not sent.) A cloud path (Gemma 4 through the Gemini API) exists in the code for people
 without the disk space, but it is off by default and sends the receipts to Google.
 
 ## How it reads a receipt
@@ -33,7 +34,8 @@ without the disk space, but it is off by default and sends the receipts to Googl
 1. **Photo** → Gemma 4 reads the image (`RECEIPT_MODE=vision`, default), or PaddleOCR reads the text and Gemma fills the fields (`RECEIPT_MODE=ocr`).
 2. **PDF with text** and **saved e-mail (.eml)** → the text goes straight to Gemma; no OCR needed. A scanned PDF is rendered and read like a photo.
 3. **The code checks what the model read**: required fields, VAT rate 19 % or 7 %, VAT that fits the total, a known category. Anything odd turns the row yellow.
-4. **Bank matching**: a receipt matches a bank payment with the same amount within three days.
+4. **Bank matching**: a receipt matches a bank payment with the same amount, paid from 3 days before to 14 days
+   after the receipt date (invoices are often paid by transfer a few days later).
 
 ## Run it
 
@@ -45,7 +47,7 @@ python -m venv .venv
 .venv/Scripts/python -m pip install -r requirements.txt     # macOS/Linux: .venv/bin/python
 
 # demo with fake data
-.venv/Scripts/python scripts/make_demo_receipts.py samples/demo_receipts
+.venv/Scripts/python scripts/make_demo_receipts.py samples/demo_receipts samples/FAKE_ING_Umsatzanzeige_2026Q3.csv
 .venv/Scripts/python src/build_book.py samples/demo_receipts samples/FAKE_ING_Umsatzanzeige_2026Q3.csv Belegbuch.xlsx --zve 38000
 
 # tests
@@ -56,19 +58,23 @@ python -m venv .venv
 the estimate sheet only shows the distance to the Pauschbetrag. Settings live in `.env` (see `.env.example`).
 Results are cached in `<folder>/.extracted.json`, so a second run only reads new receipts.
 
-## Demo results (fake data, one run, 2026-10-13)
+## Demo results (fake data, one run, 2026-10-14)
 
-Six fake receipts (three photos, two PDFs, one e-mail) and a fake ING quarter with 21 bank lines,
-on a laptop with a Ryzen 5 4600H, 15.4 GB RAM and integrated graphics only:
+![The Excel book built from the fake demo data](samples/demo_book.png)
 
-- 5 of 6 receipts read with the right date, shop, total and VAT. The sixth, a café photo, came back with a
-  wrong total (17.84 instead of 8.40); the VAT check caught it and marked the row yellow.
-- 5 receipts matched their bank line. The café receipt was paid in cash, so there is no bank line.
-- 13 bank payments had no receipt; 6 of them were flagged as probably tax-relevant (donation, two train
-  tickets, window cleaning, pharmacy, union fee).
-- 6.7–16.1 s per receipt once the model was loaded.
+Nine fake German receipts (five photos, three PDFs, one e-mail; every shop is invented and every receipt is
+stamped MUSTER) and a fake ING quarter with 21 bank lines, on a laptop with a Ryzen 5 4600H, 15.4 GB RAM and
+integrated graphics only:
 
-These numbers come from fake receipts I generated, not from real ones; real photos are harder.
+- 8 of 9 receipts came back with the right date, shop, total and VAT, and all 9 got the right category.
+- The ninth, a café photo, came back with a total of 13.34 instead of 8.40. The VAT check caught it
+  (1.34 is not 19 % of 13.34) and marked the row yellow.
+- 8 receipts matched their bank line, including a cleaning invoice dated 5 August and paid on 10 August.
+  The café was paid in cash, so it has no bank line.
+- 10 bank payments had no receipt; 3 were flagged as probably tax-relevant (two train tickets, a union fee).
+- 15.0–28.0 s per receipt, 57.0 s for the first one (model loading).
+
+These numbers come from receipts I generated, not from real ones; real photos are harder.
 
 ## Limits
 
@@ -76,6 +82,7 @@ These numbers come from fake receipts I generated, not from real ones; real phot
 - Tax: only the 2026 tariff (§32a EStG) and the €1,230 Pauschbetrag (§9a EStG). No Solidaritätszuschlag,
   Kirchensteuer, joint assessment, Sonderausgaben, §35a or deduction limits. Categories are suggestions.
 - Matching needs exact amounts; split payments or refunds are not handled.
+- Donations, household services (§35a) and medical costs are sorted and matched, but not yet valued in the estimate.
 
 ## Layout
 
