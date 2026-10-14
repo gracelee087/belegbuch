@@ -3,7 +3,8 @@
   python src/build_book.py receipts/ bank.csv out.xlsx [--zve 38000]
 
 Sheets: Receipts (every receipt, checked), Missing receipts (bank lines with no receipt),
-Estimate (what the receipts are worth; --zve = taxable income from last year's Steuerbescheid).
+Estimate (what the receipts are worth; --zve = taxable income from last year's Steuerbescheid),
+Spending (where the money went: Gemma labels and summarizes, code computes and checks every number).
 """
 import argparse
 import json
@@ -12,12 +13,13 @@ import sys
 import time
 
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill
+from openpyxl.styles import Alignment, Font, PatternFill
 
 sys.path.insert(0, os.path.dirname(__file__))
 from bank_ing import read_ing_csv
 from extract import RECEIPT_EXT, check, extract
 from match import match
+from spending import label as label_spending, stats as spending_stats, summarize, unsupported_numbers
 from tax import ARBEITNEHMER_PAUSCHBETRAG, marginal_rate, saving
 
 WERBUNGSKOSTEN = {"Arbeitsmittel", "Fachliteratur", "Fortbildung", "Fahrtkosten", "Gewerkschaft"}
@@ -127,9 +129,50 @@ def build(folder, bank_csv, out, zve=None):
     ws.append(["Not included: solidarity surcharge, church tax, joint assessment, special expenses,"
                " §35a, caps. Only receipts in: " + ", ".join(label(c) for c in sorted(WERBUNGSKOSTEN)) + "."])
     ws.column_dimensions["A"].width = 58
+
+    labels = label_spending(tx, os.path.splitext(bank_csv)[0] + ".labels.json")
+    st = spending_stats(tx, labels)
+    summary = summarize(st)
+    bad = unsupported_numbers(summary, st)
+    ws = wb.create_sheet("Spending")
+    ws.append(["Summary by Gemma 4 (local). Every number below the summary was computed by code."])
+    ws["A1"].font = BOLD
+    ws.append([summary])
+    ws["A2"].alignment = Alignment(wrap_text=True, vertical="top")
+    ws.row_dimensions[2].height = 110
+    ws.append(["Check: " + ("every number in the summary matches the code's numbers" if not bad
+                            else "numbers the code did not compute: " + ", ".join(bad))])
+    if bad:
+        ws["A3"].fill = WARN
+    ws.append([])
+    for row in [["Income €", st["income_total"]], ["Spending €", st["spending_total"]], ["Left over €", st["left_over"]],
+                ["Spending as % of income", st["spending_share_of_income_pct"]]]:
+        ws.append(row)
+    ws.append([])
+    ws.append(["Category", "Total €", "Share of spending %"])
+    for c in ws[ws.max_row]:
+        c.font = BOLD
+    for r in st["by_category"]:
+        ws.append([r["category"], r["total"], r["share_pct"]])
+    ws.append([])
+    ws.append(["Month", "Spending €"])
+    for c in ws[ws.max_row]:
+        c.font = BOLD
+    for r in st["by_month"]:
+        ws.append([r["month"], r["total"]])
+    ws.append([])
+    ws.append(["Every month (recurring)", "Amount €"])
+    for c in ws[ws.max_row]:
+        c.font = BOLD
+    for r in st["recurring"]:
+        ws.append([r["payee"], r["amount"]])
+    ws.column_dimensions["A"].width = 90
+    ws.column_dimensions["B"].width = 14
+    ws.column_dimensions["C"].width = 20
     wb.save(out)
     return {"receipts": len(receipts), "matched": len(m["matched"]), "missing": len(missing),
-            "relevant_missing": sum(1 for t in missing if bank_hint(t)), "werbungskosten": round(wk_total, 2)}
+            "relevant_missing": sum(1 for t in missing if bank_hint(t)), "werbungskosten": round(wk_total, 2),
+            "spending_total": st["spending_total"], "summary_unsupported_numbers": bad}
 
 
 if __name__ == "__main__":

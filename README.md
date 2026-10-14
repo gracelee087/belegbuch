@@ -5,12 +5,13 @@ Collecting the receipts, typing them in, matching them to the bank statement and
 that are missing: every one of those steps is tedious. Belegbuch does them on my own computer.
 
 Put photos, PDFs and saved e-mail receipts into one folder, add the CSV export from the bank, and get
-an Excel book with three sheets:
+an Excel book with four sheets:
 
 | Sheet | What it shows |
 |---|---|
 | **Receipts** | Every receipt: date, shop, total, VAT 19 % / 7 %, a suggested tax category, which bank line it belongs to, and a yellow row when the code thinks the model misread it |
 | **Missing receipts** | Bank payments with no receipt, the probably tax-relevant ones first |
+| **Spending** | Where the money went: Gemma 4 labels every bank line (rent, groceries, transport, …) and writes a short summary; code computes every total and share and checks that each number in the summary is one it computed |
 | **Estimate** | What the receipts are worth so far: how far you are from the €1,230 Arbeitnehmer-Pauschbetrag and roughly how much tax each €100 above it saves (German tariff 2026) |
 
 It is a sorting helper, not tax advice. The Steuerberater decides.
@@ -60,10 +61,12 @@ Results are cached in `<folder>/.extracted.json`, so a second run only reads new
 
 ## Demo results (fake data, one run, 2026-10-14)
 
-![The Excel book built from the fake demo data](samples/demo_book.png)
+![Receipts and missing receipts, built from the fake demo data](samples/demo_book.png)
+
+![Spending and estimate sheets](samples/demo_spending.png)
 
 Nine fake German receipts (five photos, three PDFs, one e-mail; every shop is invented and every receipt is
-stamped MUSTER) and a fake ING quarter with 21 bank lines, on a laptop with a Ryzen 5 4600H, 15.4 GB RAM and
+stamped MUSTER) and a fake ING quarter with 48 bank lines, on a laptop with a Ryzen 5 4600H, 15.4 GB RAM and
 integrated graphics only:
 
 - 8 of 9 receipts came back with the right date, shop, total and VAT, and all 9 got the right category.
@@ -71,8 +74,12 @@ integrated graphics only:
   (1.34 is not 19 % of 13.34) and marked the row yellow.
 - 8 receipts matched their bank line, including a cleaning invoice dated 5 August and paid on 10 August.
   The café was paid in cash, so it has no bank line.
-- 10 bank payments had no receipt; 3 were flagged as probably tax-relevant (two train tickets, a union fee).
-- 15.0–28.0 s per receipt, 57.0 s for the first one (model loading).
+- 37 bank payments had no receipt; 3 were flagged as probably tax-relevant (two train tickets, a union fee).
+  The rest are rent, groceries, subscriptions and the like.
+- Spending: Gemma 4 sorted the 45 spending lines into 12 categories; I checked the totals by hand
+  (e.g. groceries €499.95 = eight supermarket and three organic-shop payments). Its summary used only numbers
+  the code had computed; the check found none it had made up.
+- 14.2–37.7 s per receipt in this run; the whole build took 4 min 33 s.
 
 These numbers come from receipts I generated, not from real ones; real photos are harder.
 
@@ -93,7 +100,8 @@ These numbers come from receipts I generated, not from real ones; real photos ar
 | `src/match.py` | Bank lines ↔ receipts |
 | `src/tax.py` | §32a EStG 2026 tariff and the value of extra Werbungskosten |
 | `src/build_book.py` | Folder + CSV → Excel |
-| `scripts/make_demo_receipts.py` | Makes the fake demo receipts |
+| `src/spending.py` | Spending labels (Gemma), totals (code), summary (Gemma) and the number check |
+| `scripts/make_demo_receipts.py` | Makes the fake demo receipts and bank CSV |
 | `samples/` | Fake bank CSV, fake receipts, demo Excel |
 
 ## License

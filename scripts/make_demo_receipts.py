@@ -90,29 +90,54 @@ MUSTER - FAKE DEMO
 """)
 
 # --- matching FAKE ING bank CSV ---
-rows = [
-    ("01.07.2026", "Wohnbau Muster GmbH", "Lastschrift", "Miete Juli 2026", -950.00),
-    ("02.07.2026", "Regio-Bahn Muster GmbH", "Lastschrift", "Deutschlandticket Juli", -63.00),
+def month_lines(mm, name):
+    """Lines every month has: salary, rent, ticket, phone, a gym, a streaming plan, groceries, eating out."""
+    return [
+        (f"01.{mm}.2026", "Wohnbau Muster GmbH", "Lastschrift", f"Miete {name} 2026", -950.00),
+        (f"02.{mm}.2026", "Regio-Bahn Muster GmbH", "Lastschrift", f"Deutschlandticket {name}", -63.00),
+        (f"03.{mm}.2026", "Fitness Muster", "Lastschrift", f"Mitgliedschaft {name}", -29.90),
+        (f"04.{mm}.2026", "Streamdienst Muster", "Lastschrift", "Abo Standard", -13.99),
+        (f"06.{mm}.2026", "Netz Muster Telekommunikation", "Lastschrift", f"Internet {name}", -39.95),
+        (f"15.{mm}.2026", "Beispiel AG", "Gehalt/Rente", f"Gehalt {name} 2026", 2850.00),
+    ]
+
+
+rows = month_lines("07", "Juli") + month_lines("08", "August") + month_lines("09", "September") + [
+    # July
     ("05.07.2026", "Frischmarkt Muster", "Lastschrift", "Kartenzahlung Frischmarkt", -42.37),
     ("08.07.2026", "Buchhandlung Lesezeichen", "Lastschrift", "Kartenzahlung Buchhandlung", -49.99),
+    ("10.07.2026", "Biomarkt Muster", "Lastschrift", "Kartenzahlung Biomarkt", -31.20),
     ("12.07.2026", "Versandhaus Muster GmbH", "Lastschrift", "Bestellung 000-0000000 Monitor", -189.90),
-    ("15.07.2026", "Beispiel AG", "Gehalt/Rente", "Gehalt Juli 2026", 2850.00),
+    ("13.07.2026", "Trattoria Muster", "Lastschrift", "Kartenzahlung Restaurant", -38.50),
+    ("19.07.2026", "Frischmarkt Muster", "Lastschrift", "Kartenzahlung Frischmarkt", -56.80),
     ("20.07.2026", "Aktion Musterhilfe e.V.", "Ueberweisung", "Spende", -50.00),
-    ("01.08.2026", "Wohnbau Muster GmbH", "Lastschrift", "Miete August 2026", -950.00),
-    ("02.08.2026", "Regio-Bahn Muster GmbH", "Lastschrift", "Deutschlandticket August", -63.00),
-    ("06.08.2026", "Netz Muster Telekommunikation", "Lastschrift", "Internet August", -39.95),
+    ("24.07.2026", "Lieferservice Muster", "Lastschrift", "Kartenzahlung Essen", -21.90),
+    ("26.07.2026", "Frischmarkt Muster", "Lastschrift", "Kartenzahlung Frischmarkt", -47.15),
+    ("29.07.2026", "Drogerie Muster", "Lastschrift", "Kartenzahlung Drogerie", -18.45),
+    ("31.07.2026", "Kino Muster", "Lastschrift", "Kartenzahlung Kino", -24.00),
+    # August
+    ("02.08.2026", "Frischmarkt Muster", "Lastschrift", "Kartenzahlung Frischmarkt", -61.04),
+    ("09.08.2026", "Biomarkt Muster", "Lastschrift", "Kartenzahlung Biomarkt", -27.60),
     ("10.08.2026", "Muster Haushaltsservice", "Ueberweisung", "Rechnung 2026-081 Fensterreinigung", -120.00),
     ("14.08.2026", "Lernplattform Muster", "Lastschrift", "Online-Kurs Python", -19.99),
-    ("15.08.2026", "Beispiel AG", "Gehalt/Rente", "Gehalt August 2026", 2850.00),
+    ("16.08.2026", "Frischmarkt Muster", "Lastschrift", "Kartenzahlung Frischmarkt", -52.33),
+    ("18.08.2026", "Modehaus Muster", "Lastschrift", "Kartenzahlung Bekleidung", -79.95),
     ("22.08.2026", "Apotheke am Markt", "Lastschrift", "Kartenzahlung Apotheke", -27.80),
-    ("01.09.2026", "Wohnbau Muster GmbH", "Lastschrift", "Miete September 2026", -950.00),
-    ("02.09.2026", "Regio-Bahn Muster GmbH", "Lastschrift", "Deutschlandticket September", -63.00),
-    ("06.09.2026", "Netz Muster Telekommunikation", "Lastschrift", "Internet September", -39.95),
+    ("23.08.2026", "Trattoria Muster", "Lastschrift", "Kartenzahlung Restaurant", -44.20),
+    ("28.08.2026", "Lieferservice Muster", "Lastschrift", "Kartenzahlung Essen", -26.40),
+    ("30.08.2026", "Frischmarkt Muster", "Lastschrift", "Kartenzahlung Frischmarkt", -39.98),
+    # September
+    ("05.09.2026", "Frischmarkt Muster", "Lastschrift", "Kartenzahlung Frischmarkt", -58.12),
     ("11.09.2026", "Elektro Funke", "Lastschrift", "Kartenzahlung Elektro", -79.00),
-    ("15.09.2026", "Beispiel AG", "Gehalt/Rente", "Gehalt September 2026", 2850.00),
+    ("12.09.2026", "Biomarkt Muster", "Lastschrift", "Kartenzahlung Biomarkt", -33.75),
+    ("13.09.2026", "Cafe Muster", "Lastschrift", "Kartenzahlung Cafe", -11.80),
     ("19.09.2026", "Gewerkschaft Muster", "Lastschrift", "Mitgliedsbeitrag Q3", -45.00),
+    ("20.09.2026", "Frischmarkt Muster", "Lastschrift", "Kartenzahlung Frischmarkt", -49.61),
+    ("24.09.2026", "Drogerie Muster", "Lastschrift", "Kartenzahlung Drogerie", -22.10),
     ("26.09.2026", "Lieferservice Muster", "Lastschrift", "Kartenzahlung Essen", -23.50),
+    ("27.09.2026", "Trattoria Muster", "Lastschrift", "Kartenzahlung Restaurant", -52.00),
 ]
+rows.sort(key=lambda r: (r[0][6:], r[0][3:5], r[0][:2]))
 fmt = lambda v: f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 saldo = 2500.00
 lines = ["Umsatzanzeige;Datei erstellt am: 01.10.2026 09:00", "", "IBAN;DE00 0000 0000 0000 0000 00",

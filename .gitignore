@@ -5,3 +5,4 @@ __pycache__/
 .extracted.json
 HANDOFF.md
 dev-post-draft.md
+*.labels.json
